@@ -15,7 +15,7 @@ export function renderHTML() {
 <body class="max-w-7xl mx-auto p-4 md:p-10">
     <header class="mb-10 flex items-center justify-between">
         <h1 class="text-2xl font-black tracking-tight text-blue-400">AiChatHub <span class="text-xs font-normal text-slate-500 uppercase ml-2">v1.0</span></h1>
-        <div class="text-xs text-slate-400">基于 Cloudflare Workers 部署 develop by czw</div>
+        <div class="text-xs text-slate-400">基于 Cloudflare Workers 部署 <br> develop by czw</div>
     </header>
 
     <main>

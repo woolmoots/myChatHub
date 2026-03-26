@@ -83,6 +83,7 @@ async function runKimi(prompt, env) {
       messages: [{ role: "user", content: prompt }]
     });
 
+    console.log("response: " + JSON.stringify(result));
     // 1. 如果结果里直接有 response (大多数情况)
     if (result.response) return result.response;
 
