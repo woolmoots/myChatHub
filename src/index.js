@@ -40,7 +40,7 @@ async function fetchMiniMax(prompt, apiKey) {
 
   try {
     // 使用最新官方推荐的域名和 OpenAI 兼容路径
-    const response = await fetch("https://api.minimaxi.com/v1/chat/completions", {
+    const response = await fetch("https://api.minimaxi.com/v1", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
