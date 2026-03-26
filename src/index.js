@@ -14,7 +14,15 @@ export default {
           // 2. Cloudflare kimi-k2.5
           env.AI.run('@cf/moonshotai/kimi-k2.5', {
             messages: [{ role: "user", content: prompt }]
-          }).then(r => r.response || r.text || r.choices?.[0]?.message?.content || "Kimi未返回内容"),
+          }).then(r => {
+            // 按照优先级尝试各种可能的字段
+            return r.response // 标准 CF 格式
+              || r.text // 部分第三方格式
+              || r.choices?.[0]?.message?.content // 标准 OpenAI 格式 (Kimi 最可能走这个)
+              || r.choices?.[0]?.text // 遗留 OpenAI 格式
+              || (typeof r === 'string' ? r : null) // 直接返回字符串的情况
+              || "Kimi 响应结构异常，请查看日志";
+          }),
           // 3. Cloudflare glm
           env.AI.run('@cf/zai-org/glm-4.7-flash', {
             messages: [{ role: "user", content: prompt }]
@@ -52,7 +60,7 @@ async function fetchMiniMax(prompt, apiKey) {
       },
       body: JSON.stringify({
         // MiniMax M2.7
-        model: "MiniMax-M2.7", 
+        model: "MiniMax-M2.7",
         messages: [
           { role: "system", content: "你是一个专业的AI助手" },
           { role: "user", content: prompt }
