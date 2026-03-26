@@ -12,17 +12,7 @@ export default {
           // 1. MiniMax M2.7 (使用最新 OpenAI 兼容接口)
           fetchMiniMax(prompt, env.MINIMAX_API_KEY),
           // 2. Cloudflare kimi-k2.5
-          env.AI.run('@cf/moonshotai/kimi-k2.5', {
-            messages: [{ role: "user", content: prompt }]
-          }).then(r => {
-            // 按照优先级尝试各种可能的字段
-            return r.response // 标准 CF 格式
-              || r.text // 部分第三方格式
-              || r.choices?.[0]?.message?.content // 标准 OpenAI 格式 (Kimi 最可能走这个)
-              || r.choices?.[0]?.text // 遗留 OpenAI 格式
-              || (typeof r === 'string' ? r : null) // 直接返回字符串的情况
-              || "Kimi 响应结构异常，请查看日志";
-          }),
+          runKimi(prompt, env),
           // 3. Cloudflare glm
           env.AI.run('@cf/zai-org/glm-4.7-flash', {
             messages: [{ role: "user", content: prompt }]
@@ -84,5 +74,30 @@ async function fetchMiniMax(prompt, apiKey) {
 
   } catch (err) {
     return "❌ 网络请求链路异常: " + err.message;
+  }
+}
+
+async function runKimi(prompt, env) {
+  try {
+    const result = await env.AI.run('@cf/moonshotai/kimi-k2.5', {
+      messages: [{ role: "user", content: prompt }]
+    });
+
+    // 1. 如果结果里直接有 response (大多数情况)
+    if (result.response) return result.response;
+
+    // 2. 如果结果里有 choices 数组 (Moonshot 的典型 OpenAI 风格)
+    if (result.choices && result.choices[0] && result.choices[0].message) {
+      return result.choices[0].message.content;
+    }
+
+    // 3. 如果结果是一个纯字符串 (最简单情况)
+    if (typeof result === 'string') return result;
+
+    // 4. 极端情况：返回了对象但没内容，转成字符串看看
+    return "解析失败，原始数据: " + JSON.stringify(result);
+
+  } catch (e) {
+    return "Kimi 接口报错: " + e.message;
   }
 }
