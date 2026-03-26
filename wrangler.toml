@@ -1,0 +1,7 @@
+name = "mychathub"  # Cloudflare 不支持大写，建议小写
+main = "src/index.js"
+compatibility_date = "2024-03-20"
+
+# 开启 Cloudflare 内置 AI 权限
+[ai]
+binding = "AI"
