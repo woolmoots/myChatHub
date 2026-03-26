@@ -1,4 +1,4 @@
-name = "mychathub"  # Cloudflare 不支持大写，建议小写
+name = "my-chat-hub"  # Cloudflare 不支持大写，建议小写
 main = "src/index.js"
 compatibility_date = "2024-03-20"
 

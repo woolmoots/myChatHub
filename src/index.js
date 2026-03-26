@@ -9,12 +9,12 @@ export default {
 
       try {
         const results = await Promise.allSettled([
-          // 1. MiniMax M2.5 (使用最新 OpenAI 兼容接口)
+          // 1. MiniMax M2.7 (使用最新 OpenAI 兼容接口)
           fetchMiniMax(prompt, env.MINIMAX_API_KEY),
           // 2. Cloudflare Llama 3
           env.AI.run('@cf/meta/llama-3-8b-instruct', { prompt }).then(r => r.response),
           // 3. Cloudflare Qwen 1.5 (修正后的路径)
-          env.AI.run('@cf/qwen/qwen1.5-7b-chat-awq', { prompt }).then(r => r.response)
+          env.AI.run('@cf/qwen/qwen1.5-14b-chat-awq', { prompt }).then(r => r.response)
         ]);
 
         return new Response(JSON.stringify({
@@ -47,7 +47,7 @@ async function fetchMiniMax(prompt, apiKey) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        // MiniMax M2.5 建议使用 abab6.5s-chat 或 abab7-chat (具体看你的 plan)
+        // MiniMax M2.7
         model: "MiniMax-M2.7", 
         messages: [
           { role: "system", content: "你是一个专业的AI助手" },

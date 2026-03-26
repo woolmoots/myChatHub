@@ -5,7 +5,7 @@ export function renderHTML() {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>myChatHub - 多模型聚合</title>
+    <title>AiChatHub - 多模型聚合</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #0f172a; color: #f1f5f9; font-family: sans-serif; }
@@ -14,8 +14,8 @@ export function renderHTML() {
 </head>
 <body class="max-w-7xl mx-auto p-4 md:p-10">
     <header class="mb-10 flex items-center justify-between">
-        <h1 class="text-2xl font-black tracking-tight text-blue-400">myChatHub <span class="text-xs font-normal text-slate-500 uppercase ml-2">v1.0</span></h1>
-        <div class="text-xs text-slate-400">基于 Cloudflare Workers 部署</div>
+        <h1 class="text-2xl font-black tracking-tight text-blue-400">AiChatHub <span class="text-xs font-normal text-slate-500 uppercase ml-2">v1.0</span></h1>
+        <div class="text-xs text-slate-400">基于 Cloudflare Workers 部署 develop by czw</div>
     </header>
 
     <main>
@@ -36,18 +36,18 @@ export function renderHTML() {
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- MiniMax -->
             <div class="card rounded-2xl p-6">
-                <div class="flex items-center mb-4"><span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span><h3 class="font-bold">MiniMax M2.5</h3></div>
-                <div id="res-minimax" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待中...</div>
+                <div class="flex items-center mb-4"><span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span><h3 class="font-bold">MiniMax M2.7</h3></div>
+                <div id="res-minimax" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
             </div>
             <!-- Llama 3 -->
             <div class="card rounded-2xl p-6">
                 <div class="flex items-center mb-4"><span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span><h3 class="font-bold">Llama 3 (Meta)</h3></div>
-                <div id="res-llama3" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待中...</div>
+                <div id="res-llama3" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
             </div>
             <!-- Qwen -->
             <div class="card rounded-2xl p-6">
                 <div class="flex items-center mb-4"><span class="w-3 h-3 bg-orange-500 rounded-full mr-2"></span><h3 class="font-bold">Qwen 1.5 (Alibaba)</h3></div>
-                <div id="res-qwen" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待中...</div>
+                <div id="res-qwen" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
             </div>
         </section>
     </main>
