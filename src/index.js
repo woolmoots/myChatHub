@@ -39,15 +39,29 @@ export default {
 
 // MiniMax API 调用细节
 async function fetchMiniMax(prompt, apiKey) {
-  if (!apiKey) return "未配置 API KEY";
-  const response = await fetch("https://api.minimax.chat/v1/text/chatcompletion_v2", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: "abab6.5s-chat",
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
-  const data = await response.json();
-  return data.choices[0].message.content;
+  if (!apiKey) return "错误: 缺少 MINIMAX_API_KEY，请在控制台 Variables 中设置。";
+  
+  try {
+    const response = await fetch("https://api.minimax.chat/v1/text/chatcompletion_v2", {
+      method: "POST",
+      headers: { 
+        "Authorization": `Bearer ${apiKey}`, 
+        "Content-Type": "application/json" 
+      },
+      body: JSON.stringify({
+        model: "abab6.5s-chat", // ⚠️ 请确认你的 plan 是这个模型
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const errorDetail = await response.text();
+      return `MiniMax 报错 (${response.status}): ${errorDetail}`;
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (e) {
+    return "MiniMax 网络请求异常: " + e.message;
+  }
 }
