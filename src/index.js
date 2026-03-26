@@ -11,16 +11,16 @@ export default {
         const results = await Promise.allSettled([
           // 1. MiniMax M2.7 (使用最新 OpenAI 兼容接口)
           fetchMiniMax(prompt, env.MINIMAX_API_KEY),
-          // 2. Cloudflare Llama 3
-          env.AI.run('@cf/meta/llama-3-8b-instruct', { prompt }).then(r => r.response),
-          // 3. Cloudflare Qwen 1.5 (修正后的路径)
-          env.AI.run('@cf/qwen/qwen1.5-14b-chat-awq', { prompt }).then(r => r.response)
+          // 2. Cloudflare kimi-k2.5
+          env.AI.run('@cf/moonshotai/kimi-k2.5', { prompt }).then(r => r.response),
+          // 3. Cloudflare glm
+          env.AI.run('@cf/zai-org/glm-4.7-flash', { prompt }).then(r => r.response)
         ]);
 
         return new Response(JSON.stringify({
           minimax: results[0].status === 'fulfilled' ? results[0].value : "MiniMax请求失败",
-          llama3: results[1].status === 'fulfilled' ? results[1].value : "Llama请求失败",
-          qwen: results[2].status === 'fulfilled' ? results[2].value : "Qwen请求失败",
+          kimi: results[1].status === 'fulfilled' ? results[1].value : "kimi请求失败",
+          glm: results[2].status === 'fulfilled' ? results[2].value : "glm请求失败",
         }), { headers: { "Content-Type": "application/json" } });
 
       } catch (e) {

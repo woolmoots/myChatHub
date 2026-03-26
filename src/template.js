@@ -39,15 +39,15 @@ export function renderHTML() {
                 <div class="flex items-center mb-4"><span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span><h3 class="font-bold">MiniMax M2.7</h3></div>
                 <div id="res-minimax" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
             </div>
-            <!-- Llama 3 -->
+            <!-- kimi-k2.5 -->
             <div class="card rounded-2xl p-6">
-                <div class="flex items-center mb-4"><span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span><h3 class="font-bold">Llama 3 (Meta)</h3></div>
-                <div id="res-llama3" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
+                <div class="flex items-center mb-4"><span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span><h3 class="font-bold">kimi-k2.5</h3></div>
+                <div id="res-kimi-k2.5" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
             </div>
-            <!-- Qwen -->
+            <!-- GLM -->
             <div class="card rounded-2xl p-6">
-                <div class="flex items-center mb-4"><span class="w-3 h-3 bg-orange-500 rounded-full mr-2"></span><h3 class="font-bold">Qwen 1.5 (Alibaba)</h3></div>
-                <div id="res-qwen" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
+                <div class="flex items-center mb-4"><span class="w-3 h-3 bg-orange-500 rounded-full mr-2"></span><h3 class="font-bold">GLM 4.7 flash (Alibaba)</h3></div>
+                <div id="res-glm" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
             </div>
         </section>
     </main>
@@ -55,7 +55,7 @@ export function renderHTML() {
     <script>
         const sendBtn = document.getElementById('sendBtn');
         const promptInput = document.getElementById('prompt');
-        const models = ['minimax', 'llama3', 'qwen'];
+        const models = ['minimax', 'kimi-k2.5', 'glm'];
 
         sendBtn.onclick = async () => {
             const prompt = promptInput.value.trim();
