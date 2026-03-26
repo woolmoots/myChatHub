@@ -80,25 +80,26 @@ async function fetchMiniMax(prompt, apiKey) {
 async function runKimi(prompt, env) {
   try {
     const result = await env.AI.run('@cf/moonshotai/kimi-k2.5', {
-      messages: [{ role: "user", content: prompt }]
+      messages: [{ role: "user", content: prompt }],
+      stream: false
     });
 
-    console.log("response: " + JSON.stringify(result));
-    // 1. 如果结果里直接有 response (大多数情况)
-    if (result.response) return result.response;
-
-    // 2. 如果结果里有 choices 数组 (Moonshot 的典型 OpenAI 风格)
-    if (result.choices && result.choices[0] && result.choices[0].message) {
-      return result.choices[0].message.content;
+    // --- 核心修复：针对你提供的 JSON 结构进行解析 ---
+    if (result && result.choices && result.choices.length > 0) {
+      const message = result.choices[0].message;
+      if (message && message.content) {
+        return message.content; // 👈 这就是你要的 "You entered 1..."
+      }
     }
 
-    // 3. 如果结果是一个纯字符串 (最简单情况)
-    if (typeof result === 'string') return result;
+    // 备选解析：如果 Cloudflare 未来把结构简化了
+    if (result.response) return result.response;
 
-    // 4. 极端情况：返回了对象但没内容，转成字符串看看
-    return "解析失败，原始数据: " + JSON.stringify(result);
+    // 调试：如果还是拿不到，把结构打出来看看
+    console.log("解析失败，当前结构:", JSON.stringify(result));
+    return "❌ 无法解析 Kimi 的返回结构";
 
   } catch (e) {
-    return "Kimi 接口报错: " + e.message;
+    return "❌ Kimi 调用异常: " + e.message;
   }
 }
