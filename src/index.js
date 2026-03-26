@@ -40,7 +40,7 @@ async function fetchMiniMax(prompt, apiKey) {
 
   try {
     // 使用最新官方推荐的域名和 OpenAI 兼容路径
-    const response = await fetch("https://api.minimaxi.com/v1", {
+    const response = await fetch("https://api.minimax.chat/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
@@ -48,7 +48,7 @@ async function fetchMiniMax(prompt, apiKey) {
       },
       body: JSON.stringify({
         // MiniMax M2.5 建议使用 abab6.5s-chat 或 abab7-chat (具体看你的 plan)
-        model: "abab6.5s-chat", 
+        model: "MiniMax-M2.7", 
         messages: [
           { role: "system", content: "你是一个专业的AI助手" },
           { role: "user", content: prompt }
