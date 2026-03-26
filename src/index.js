@@ -12,13 +12,13 @@ export default {
           // 1. MiniMax M2.7 (使用最新 OpenAI 兼容接口)
           fetchMiniMax(prompt, env.MINIMAX_API_KEY),
           // 2. Cloudflare kimi-k2.5
-          env.AI.run('@cf/moonshotai/kimi-k2.5', { prompt }).then(r => r.response || r.text),
+          env.AI.run('@cf/moonshotai/kimi-k2.5', {
+            messages: [{ role: "user", content: prompt }]
+          }).then(r => r.response || r.text || r.choices?.[0]?.message?.content || "Kimi未返回内容"),
           // 3. Cloudflare glm
-          env.AI.run('@cf/zai-org/glm-4.7-flash', { prompt }).then(r =>  if (!res) return null;
-  if (typeof res === "string") return res;
-  if (res.response) return res.response;
-  if (res.choices?.[0]?.message?.content) return res.choices[0].message.content;
-  return JSON.stringify(res);)
+          env.AI.run('@cf/zai-org/glm-4.7-flash', {
+            messages: [{ role: "user", content: prompt }]
+          }).then(r => r.response || r.text || r.choices?.[0]?.message?.content || "GLM未返回内容")
         ]);
 
         return new Response(JSON.stringify({
