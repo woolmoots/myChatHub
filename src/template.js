@@ -46,7 +46,7 @@ export function renderHTML() {
             </div>
             <!-- GLM -->
             <div class="card rounded-2xl p-6">
-                <div class="flex items-center mb-4"><span class="w-3 h-3 bg-orange-500 rounded-full mr-2"></span><h3 class="font-bold">GLM 4.7 flash (Alibaba)</h3></div>
+                <div class="flex items-center mb-4"><span class="w-3 h-3 bg-orange-500 rounded-full mr-2"></span><h3 class="font-bold">GLM 4.7 flash</h3></div>
                 <div id="res-glm" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
             </div>
         </section>

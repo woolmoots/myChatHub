@@ -18,9 +18,9 @@ export default {
         ]);
 
         return new Response(JSON.stringify({
-          minimax: results[0].status === 'fulfilled' ? results[0].value : "MiniMax请求失败",
-          kimi: results[1].status === 'fulfilled' ? results[1].value : "kimi请求失败",
-          glm: results[2].status === 'fulfilled' ? results[2].value : "glm请求失败",
+          minimax: results[0].status === 'fulfilled' ? results[0] : "MiniMax请求失败",
+          kimi: results[1].status === 'fulfilled' ? results[1] : "kimi请求失败",
+          glm: results[2].status === 'fulfilled' ? results[2] : "glm请求失败",
         }), { headers: { "Content-Type": "application/json" } });
 
       } catch (e) {
