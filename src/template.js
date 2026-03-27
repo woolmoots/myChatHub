@@ -96,7 +96,7 @@ export function renderHTML() {
             resetUI();
         };
 
-        sendBtn.onclick = async () => {
+        const submitPrompt = async () => {
             const prompt = promptInput.value.trim();
             if (!prompt) return;
 
@@ -154,9 +154,12 @@ export function renderHTML() {
             }
         };
 
+        sendBtn.onclick = submitPrompt;
+
         promptInput.addEventListener('keydown', (event) => {
-            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter' && !sendBtn.disabled) {
-                sendBtn.click();
+            if (event.key === 'Enter' && !event.shiftKey && !sendBtn.disabled) {
+                event.preventDefault();
+                submitPrompt();
             }
         });
     </script>
