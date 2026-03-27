@@ -4,126 +4,126 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    if (request.method === "POST" && url.pathname === "/api/chat") {
+    if (request.method === 'POST' && url.pathname === '/api/chat') {
       const { prompt } = await request.json();
 
-      // 创建 SSE 流，实现谁先响应谁先推送
       const stream = new ReadableStream({
         async start(controller) {
+          const encoder = new TextEncoder();
           const encode = (msg) => {
-            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(msg)}\n\n`));
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(msg)}\n\n`));
           };
 
           const sendResult = async (model, fn) => {
-            const start = Date.now();
+            const startedAt = Date.now();
+
             try {
               const result = await fn();
-              const elapsed = Date.now() - start;
-              encode({ model, result, elapsed });
-            } catch (e) {
-              const elapsed = Date.now() - start;
-              encode({ model, result: `❌ ${e.message}`, elapsed });
+              encode({ model, result, elapsed: Date.now() - startedAt });
+            } catch (error) {
+              encode({
+                model,
+                result: `❌ ${error.message}`,
+                elapsed: Date.now() - startedAt,
+              });
             }
           };
 
-          // 并行执行，谁先完成谁先推送
-          sendResult('minimax', () => fetchMiniMax(prompt, env.MINIMAX_API_KEY));
-          sendResult('kimi', () => runKimi(prompt, env));
-          sendResult('glm', () =>
-            env.AI.run('@cf/zai-org/glm-4.7-flash', {
-              messages: [{ role: "user", content: prompt }]
-            }).then(r => r.response || r.text || r.choices?.[0]?.message?.content || "GLM未返回内容")
-          );
+          try {
+            await Promise.all([
+              sendResult('minimax', () => fetchMiniMax(prompt, env.MINIMAX_API_KEY)),
+              sendResult('kimi', () => runKimi(prompt, env)),
+              sendResult('glm', async () => {
+                const result = await env.AI.run('@cf/zai-org/glm-4.7-flash', {
+                  messages: [{ role: 'user', content: prompt }],
+                });
 
-          controller.close();
-        }
+                return (
+                  result.response ||
+                  result.text ||
+                  result.choices?.[0]?.message?.content ||
+                  'GLM 未返回内容'
+                );
+              }),
+            ]);
+          } finally {
+            encode({ allDone: true });
+            controller.close();
+          }
+        },
       });
 
       return new Response(stream, {
         headers: {
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          "Connection": "keep-alive",
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          Connection: 'keep-alive',
         },
       });
     }
 
     return new Response(renderHTML(), {
-      headers: { "Content-Type": "text/html;charset=UTF-8" },
+      headers: { 'Content-Type': 'text/html;charset=UTF-8' },
     });
   },
 };
 
-// --- MiniMax 调用函数 (OpenAI 兼容模式) ---
 async function fetchMiniMax(prompt, apiKey) {
-  if (!apiKey) return "未在后台配置 MINIMAX_API_KEY";
+  if (!apiKey) return '未在后台配置 MINIMAX_API_KEY';
 
   try {
-    // 使用最新官方推荐的域名和 OpenAI 兼容路径
-    const response = await fetch("https://api.minimax.chat/v1/chat/completions", {
-      method: "POST",
+    const response = await fetch('https://api.minimax.chat/v1/chat/completions', {
+      method: 'POST',
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        // MiniMax M2.7
-        model: "MiniMax-M2.7",
+        model: 'MiniMax-M2.7',
         messages: [
-          { role: "system", content: "你是一个专业的AI助手" },
-          { role: "user", content: prompt }
-        ]
-      })
+          { role: 'system', content: '你是一个专业的 AI 助手' },
+          { role: 'user', content: prompt },
+        ],
+      }),
     });
 
     const data = await response.json();
 
-    // 如果接口返回了报错信息 (MiniMax 的 base_resp 结构)
     if (data.base_resp && data.base_resp.status_code !== 0) {
-      return `❌ API报错: [${data.base_resp.status_code}] ${data.base_resp.status_msg}`;
+      return `❌ API 报错: [${data.base_resp.status_code}] ${data.base_resp.status_msg}`;
     }
 
-    // 标准 OpenAI 结构解析
-    if (data.choices && data.choices[0] && data.choices[0].message) {
+    if (data.choices?.[0]?.message?.content) {
       const text = data.choices[0].message.content;
+      if (typeof text !== 'string') return text;
 
-      if (!text || typeof text !== 'string') return text;
-      // 1. 去除 <think> 标签内容
-      const cleaned = text.replace(/<think>[\s\S]*?<\/think>/g, '');
-      // 2. 去除多余的换行符并返回
-      return cleaned.trim();
+      return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
     }
 
-    return "❌ 接口返回异常，原始数据: " + JSON.stringify(data);
-
-  } catch (err) {
-    return "❌ 网络请求链路异常: " + err.message;
+    return `❌ 接口返回异常，原始数据: ${JSON.stringify(data)}`;
+  } catch (error) {
+    return `❌ MiniMax 调用异常: ${error.message}`;
   }
 }
 
 async function runKimi(prompt, env) {
   try {
     const result = await env.AI.run('@cf/moonshotai/kimi-k2.5', {
-      messages: [{ role: "user", content: prompt }],
-      stream: false
+      messages: [{ role: 'user', content: prompt }],
+      stream: false,
     });
 
-    // --- 核心修复：针对你提供的 JSON 结构进行解析 ---
-    if (result && result.choices && result.choices.length > 0) {
-      const message = result.choices[0].message;
-      if (message && message.content) {
-        return message.content; // 👈 这就是你要的 "You entered 1..."
-      }
+    if (result?.choices?.[0]?.message?.content) {
+      return result.choices[0].message.content;
     }
 
-    // 备选解析：如果 Cloudflare 未来把结构简化了
-    if (result.response) return result.response;
+    if (result?.response) {
+      return result.response;
+    }
 
-    // 调试：如果还是拿不到，把结构打出来看看
-    console.log("解析失败，当前结构:", JSON.stringify(result));
-    return "❌ 无法解析 Kimi 的返回结构";
-
-  } catch (e) {
-    return "❌ Kimi 调用异常: " + e.message;
+    console.log('Kimi 返回结构无法识别', JSON.stringify(result));
+    return '❌ 无法解析 Kimi 的返回结果';
+  } catch (error) {
+    return `❌ Kimi 调用异常: ${error.message}`;
   }
 }
