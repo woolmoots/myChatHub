@@ -79,41 +79,55 @@ async function fetchMiniMax(prompt, apiKey) {
 
 async function runKimi(prompt, env) {
   try {
-    // 1. 发起请求
     const response = await env.AI.run('@cf/moonshotai/kimi-k2.5', {
       messages: [{ role: "user", content: prompt }],
       stream: false
     });
 
-    // --- 核心修复：检查并解析 Response 对象 ---
+    // 1. 强制解析：不管是 Response 对象、流、还是普通对象，统统转成 JSON 对象
     let result;
-    
-    // 如果 response 是一个 Response 对象（即拥有 .json() 方法）
-    if (response instanceof Response || typeof response.json === 'function') {
+    if (response instanceof Response || (response && typeof response.json === 'function')) {
       result = await response.json();
+    } else if (response instanceof ReadableStream || (response && response.getReader)) {
+      // 处理流式返回
+      const reader = response.getReader();
+      const decoder = new TextDecoder();
+      let text = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        text += decoder.decode(value);
+      }
+      try { result = JSON.parse(text); } catch(e) { result = { response: text }; }
     } else {
-      // 否则说明它已经是一个解析好的 JS 对象
       result = response;
     }
 
-    // 调试打印：这次你应该能看到完整的 JSON 字符串了
-    console.log("Kimi 最终解析结果:", JSON.stringify(result));
-
-    // 2. 按照 OpenAI 标准结构提取内容
-    if (result && result.choices && result.choices.length > 0) {
-      const message = result.choices[0].message;
-      if (message && message.content) {
-        return message.content;
+    // 2. 深度防御式提取 (针对你发给我的那个结构)
+    // 路径：result -> choices[0] -> message -> content
+    if (result && result["choices"] && result["choices"][0] && result["choices"][0]["message"]) {
+      const msg = result["choices"][0]["message"];
+      const content = msg["content"] || "";
+      const reasoning = msg["reasoning_content"] || "";
+      
+      if (reasoning && content) {
+        return `【思考】\n${reasoning}\n\n【回答】\n${content}`;
       }
+      if (content) return content;
     }
 
-    // 3. 兜底解析：如果 Cloudflare 以后改回了标准 .response 格式
-    if (result.response) return result.response;
+    // 3. 兜底路径：标准 CF 格式
+    if (result && result.response) return result.response;
+    if (result && result.text) return result.text;
 
-    return "❌ 无法解析 Kimi 返回的字段，结构为: " + JSON.stringify(result);
+    // 4. 终极自救：如果还是拿不到特定字段，直接把整个对象转成字符串返回，绝不返回 undefined
+    if (result) {
+      return "解析未命中特定字段，原始数据：" + JSON.stringify(result);
+    }
+
+    return "❌ Kimi 返回了完全空的结果 (null)";
 
   } catch (e) {
-    // 捕获可能的解析错误或网络错误
     return "❌ Kimi 执行异常: " + e.message;
   }
 }
