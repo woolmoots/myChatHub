@@ -79,55 +79,27 @@ async function fetchMiniMax(prompt, apiKey) {
 
 async function runKimi(prompt, env) {
   try {
-    const response = await env.AI.run('@cf/moonshotai/kimi-k2.5', {
+    const result = await env.AI.run('@cf/moonshotai/kimi-k2.5', {
       messages: [{ role: "user", content: prompt }],
       stream: false
     });
 
-    // 1. 强制解析：不管是 Response 对象、流、还是普通对象，统统转成 JSON 对象
-    let result;
-    if (response instanceof Response || (response && typeof response.json === 'function')) {
-      result = await response.json();
-    } else if (response instanceof ReadableStream || (response && response.getReader)) {
-      // 处理流式返回
-      const reader = response.getReader();
-      const decoder = new TextDecoder();
-      let text = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        text += decoder.decode(value);
+    // --- 核心修复：针对你提供的 JSON 结构进行解析 ---
+    if (result && result.choices && result.choices.length > 0) {
+      const message = result.choices[0].message;
+      if (message && message.content) {
+        return message.content; // 👈 这就是你要的 "You entered 1..."
       }
-      try { result = JSON.parse(text); } catch(e) { result = { response: text }; }
-    } else {
-      result = response;
     }
 
-    // 2. 深度防御式提取 (针对你发给我的那个结构)
-    // 路径：result -> choices[0] -> message -> content
-    if (result && result["choices"] && result["choices"][0] && result["choices"][0]["message"]) {
-      const msg = result["choices"][0]["message"];
-      const content = msg["content"] || "";
-      const reasoning = msg["reasoning_content"] || "";
-      
-      if (reasoning && content) {
-        return `【思考】\n${reasoning}\n\n【回答】\n${content}`;
-      }
-      if (content) return content;
-    }
+    // 备选解析：如果 Cloudflare 未来把结构简化了
+    if (result.response) return result.response;
 
-    // 3. 兜底路径：标准 CF 格式
-    if (result && result.response) return result.response;
-    if (result && result.text) return result.text;
-
-    // 4. 终极自救：如果还是拿不到特定字段，直接把整个对象转成字符串返回，绝不返回 undefined
-    if (result) {
-      return "解析未命中特定字段，原始数据：" + JSON.stringify(result);
-    }
-
-    return "❌ Kimi 返回了完全空的结果 (null)";
+    // 调试：如果还是拿不到，把结构打出来看看
+    console.log("解析失败，当前结构:", JSON.stringify(result));
+    return "❌ 无法解析 Kimi 的返回结构";
 
   } catch (e) {
-    return "❌ Kimi 执行异常: " + e.message;
+    return "❌ Kimi 调用异常: " + e.message;
   }
 }
