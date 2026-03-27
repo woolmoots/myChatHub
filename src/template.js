@@ -14,7 +14,7 @@ export function renderHTML() {
 </head>
 <body class="max-w-7xl mx-auto p-4 md:p-10">
     <header class="mb-10 flex items-center justify-between">
-        <h1 class="text-2xl font-black tracking-tight text-blue-400">AiChatHub <span class="text-xs font-normal text-slate-500 uppercase ml-2">v1.0</span></h1>
+        <h1 class="text-2xl font-black tracking-tight text-blue-400">AiChatHub <span class="text-xs font-normal text-slate-500 uppercase ml-2">v2.0</span></h1>
         <div class="text-xs text-slate-400">基于 Cloudflare Workers 部署 <br> develop by czw</div>
     </header>
 
@@ -36,18 +36,27 @@ export function renderHTML() {
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- MiniMax -->
             <div class="card rounded-2xl p-6">
-                <div class="flex items-center mb-4"><span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span><h3 class="font-bold">MiniMax M2.7</h3></div>
-                <div id="res-minimax" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center"><span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span><h3 class="font-bold">MiniMax M2.7</h3></div>
+                    <span id="time-minimax" class="text-xs text-slate-500"></span>
+                </div>
+                <div id="res-minimax" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">等待输入...</div>
             </div>
             <!-- kimi -->
             <div class="card rounded-2xl p-6">
-                <div class="flex items-center mb-4"><span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span><h3 class="font-bold">kimi-k2.5</h3></div>
-                <div id="res-kimi" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center"><span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span><h3 class="font-bold">kimi-k2.5</h3></div>
+                    <span id="time-kimi" class="text-xs text-slate-500"></span>
+                </div>
+                <div id="res-kimi" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">等待输入...</div>
             </div>
             <!-- GLM -->
             <div class="card rounded-2xl p-6">
-                <div class="flex items-center mb-4"><span class="w-3 h-3 bg-orange-500 rounded-full mr-2"></span><h3 class="font-bold">GLM 4.7 flash</h3></div>
-                <div id="res-glm" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center"><span class="w-3 h-3 bg-orange-500 rounded-full mr-2"></span><h3 class="font-bold">GLM 4.7 flash</h3></div>
+                    <span id="time-glm" class="text-xs text-slate-500"></span>
+                </div>
+                <div id="res-glm" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">等待输入...</div>
             </div>
         </section>
     </main>
@@ -57,35 +66,69 @@ export function renderHTML() {
         const promptInput = document.getElementById('prompt');
         const models = ['minimax', 'kimi', 'glm'];
 
+        // 每个模型的独立状态
+        const modelStatus = {};
+        models.forEach(m => modelStatus[m] = { done: false, elapsed: 0 });
+
         sendBtn.onclick = async () => {
             const prompt = promptInput.value.trim();
             if (!prompt) return;
 
             // UI 状态重置
             sendBtn.disabled = true;
-            sendBtn.innerText = '正在并行计算...';
+            sendBtn.innerText = '正在计算...';
             models.forEach(m => {
-                const el = document.getElementById('res-' + m);
-                el.innerText = '思考中...';
-                el.classList.remove('italic');
+                document.getElementById('res-' + m).innerText = '思考中...';
+                document.getElementById('time-' + m).innerText = '';
+                modelStatus[m] = { done: false, elapsed: 0 };
             });
 
             try {
-                const start = Date.now();
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ prompt })
                 });
-                const data = await response.json();
-                const end = Date.now();
 
-                models.forEach(m => document.getElementById('res-' + m).innerText = data[m]);
-                sendBtn.innerText = '发送请求 (耗时 ' + (end - start) + 'ms)';
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const text = decoder.decode(value);
+                    // 解析 SSE 事件 (可能一次收到多行)
+                    const lines = text.split('\n');
+                    for (const line of lines) {
+                        if (!line.startsWith('data: ')) continue;
+                        const msg = JSON.parse(line.slice(6));
+
+                        if (msg.allDone) {
+                            sendBtn.disabled = false;
+                            sendBtn.innerText = '发送请求';
+                            continue;
+                        }
+
+                        const { model, result, elapsed } = msg;
+                        modelStatus[model].done = true;
+                        modelStatus[model].elapsed = elapsed;
+
+                        document.getElementById('res-' + model).innerText = result;
+                        document.getElementById('time-' + model).innerText = elapsed + 'ms';
+
+                        // 检查是否全部完成
+                        const allDone = models.every(m => modelStatus[m].done);
+                        if (allDone) {
+                            sendBtn.disabled = false;
+                            sendBtn.innerText = '发送请求';
+                        }
+                    }
+                }
             } catch (e) {
                 alert('通信异常: ' + e.message);
-            } finally {
                 sendBtn.disabled = false;
+                sendBtn.innerText = '发送请求';
             }
         };
     </script>

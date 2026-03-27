@@ -7,27 +7,45 @@ export default {
     if (request.method === "POST" && url.pathname === "/api/chat") {
       const { prompt } = await request.json();
 
-      try {
-        const results = await Promise.allSettled([
-          // 1. MiniMax M2.7 (使用最新 OpenAI 兼容接口)
-          fetchMiniMax(prompt, env.MINIMAX_API_KEY),
-          // 2. Cloudflare kimi-k2.5
-          runKimi(prompt, env),
-          // 3. Cloudflare glm
-          env.AI.run('@cf/zai-org/glm-4.7-flash', {
-            messages: [{ role: "user", content: prompt }]
-          }).then(r => r.response || r.text || r.choices?.[0]?.message?.content || "GLM未返回内容")
-        ]);
+      // 创建 SSE 流，实现谁先响应谁先推送
+      const stream = new ReadableStream({
+        async start(controller) {
+          const encode = (msg) => {
+            controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(msg)}\n\n`));
+          };
 
-        return new Response(JSON.stringify({
-          minimax: results[0].status === 'fulfilled' ? results[0].value : "MiniMax请求失败",
-          kimi: results[1].status === 'fulfilled' ? results[1].value : "kimi请求失败",
-          glm: results[2].status === 'fulfilled' ? results[2].value : "glm请求失败",
-        }), { headers: { "Content-Type": "application/json" } });
+          const sendResult = async (model, fn) => {
+            const start = Date.now();
+            try {
+              const result = await fn();
+              const elapsed = Date.now() - start;
+              encode({ model, result, elapsed });
+            } catch (e) {
+              const elapsed = Date.now() - start;
+              encode({ model, result: `❌ ${e.message}`, elapsed });
+            }
+          };
 
-      } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 500 });
-      }
+          // 并行执行，谁先完成谁先推送
+          sendResult('minimax', () => fetchMiniMax(prompt, env.MINIMAX_API_KEY));
+          sendResult('kimi', () => runKimi(prompt, env));
+          sendResult('glm', () =>
+            env.AI.run('@cf/zai-org/glm-4.7-flash', {
+              messages: [{ role: "user", content: prompt }]
+            }).then(r => r.response || r.text || r.choices?.[0]?.message?.content || "GLM未返回内容")
+          );
+
+          controller.close();
+        }
+      });
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          "Connection": "keep-alive",
+        },
+      });
     }
 
     return new Response(renderHTML(), {
