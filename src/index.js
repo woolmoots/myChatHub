@@ -83,7 +83,7 @@ async function runKimi(prompt, env) {
       messages: [{ role: "user", content: prompt }],
       stream: false
     });
-
+    console.log("kimi返回结构:", JSON.stringify(result));
     // --- 核心修复：针对你提供的 JSON 结构进行解析 ---
     if (result && result.choices && result.choices.length > 0) {
       const message = result.choices[0].message;
