@@ -67,7 +67,13 @@ async function fetchMiniMax(prompt, apiKey) {
 
     // 标准 OpenAI 结构解析
     if (data.choices && data.choices[0] && data.choices[0].message) {
-      return data.choices[0].message.content;
+      const text = data.choices[0].message.content;
+
+      if (!text || typeof text !== 'string') return text;
+      // 1. 去除 <think> 标签内容
+      const cleaned = text.replace(/<think>[\s\S]*?<\/think>/g, '');
+      // 2. 去除多余的换行符并返回
+      return cleaned.trim();
     }
 
     return "❌ 接口返回异常，原始数据: " + JSON.stringify(data);
