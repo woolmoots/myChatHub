@@ -79,27 +79,41 @@ async function fetchMiniMax(prompt, apiKey) {
 
 async function runKimi(prompt, env) {
   try {
-    const result = await env.AI.run('@cf/moonshotai/kimi-k2.5', {
+    // 1. 发起请求
+    const response = await env.AI.run('@cf/moonshotai/kimi-k2.5', {
       messages: [{ role: "user", content: prompt }],
       stream: false
     });
-    console.log("kimi返回结构:", JSON.stringify(result));
-    // --- 核心修复：针对你提供的 JSON 结构进行解析 ---
+
+    // --- 核心修复：检查并解析 Response 对象 ---
+    let result;
+    
+    // 如果 response 是一个 Response 对象（即拥有 .json() 方法）
+    if (response instanceof Response || typeof response.json === 'function') {
+      result = await response.json();
+    } else {
+      // 否则说明它已经是一个解析好的 JS 对象
+      result = response;
+    }
+
+    // 调试打印：这次你应该能看到完整的 JSON 字符串了
+    console.log("Kimi 最终解析结果:", JSON.stringify(result));
+
+    // 2. 按照 OpenAI 标准结构提取内容
     if (result && result.choices && result.choices.length > 0) {
       const message = result.choices[0].message;
       if (message && message.content) {
-        return message.content; // 👈 这就是你要的 "You entered 1..."
+        return message.content;
       }
     }
 
-    // 备选解析：如果 Cloudflare 未来把结构简化了
+    // 3. 兜底解析：如果 Cloudflare 以后改回了标准 .response 格式
     if (result.response) return result.response;
 
-    // 调试：如果还是拿不到，把结构打出来看看
-    console.log("解析失败，当前结构:", JSON.stringify(result));
-    return "❌ 无法解析 Kimi 的返回结构";
+    return "❌ 无法解析 Kimi 返回的字段，结构为: " + JSON.stringify(result);
 
   } catch (e) {
-    return "❌ Kimi 调用异常: " + e.message;
+    // 捕获可能的解析错误或网络错误
+    return "❌ Kimi 执行异常: " + e.message;
   }
 }
