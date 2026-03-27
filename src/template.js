@@ -39,10 +39,10 @@ export function renderHTML() {
                 <div class="flex items-center mb-4"><span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span><h3 class="font-bold">MiniMax M2.7</h3></div>
                 <div id="res-minimax" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
             </div>
-            <!-- kimi-k2.5 -->
+            <!-- kimi -->
             <div class="card rounded-2xl p-6">
                 <div class="flex items-center mb-4"><span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span><h3 class="font-bold">kimi-k2.5</h3></div>
-                <div id="res-kimi-k2.5" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
+                <div id="res-kimi" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap italic">等待输入...</div>
             </div>
             <!-- GLM -->
             <div class="card rounded-2xl p-6">
@@ -55,7 +55,7 @@ export function renderHTML() {
     <script>
         const sendBtn = document.getElementById('sendBtn');
         const promptInput = document.getElementById('prompt');
-        const models = ['minimax', 'kimi-k2.5', 'glm'];
+        const models = ['minimax', 'kimi', 'glm'];
 
         sendBtn.onclick = async () => {
             const prompt = promptInput.value.trim();
