@@ -21,11 +21,11 @@ async function runCloudflareModel(env, modelName, prompt, fallbackText) {
 
 export const MODEL_CONFIGS = [
   {
-    id: 'llama',
-    title: 'Llama 3.1 8B',
+    id: 'gpt55',
+    title: 'GPT-5.5',
     dotClass: 'bg-purple-500',
     run: (prompt, env) =>
-      runCloudflareModel(env, '@cf/meta/llama-3.1-8b-instruct', prompt, 'Llama 未返回内容'),
+      runCloudflareModel(env, 'openai/gpt-5.5', prompt, 'GPT-5.5 未返回内容'),
   },
   {
     id: 'kimi',
