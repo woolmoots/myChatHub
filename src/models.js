@@ -19,6 +19,18 @@ async function runCloudflareModel(env, modelName, prompt, fallbackText) {
   }
 }
 
+async function runCloudflareInputModel(env, modelName, prompt, fallbackText, instructions) {
+  try {
+    const result = await env.AI.run(modelName, {
+      instructions,
+      input: prompt,
+    });
+    return extractModelText(result, fallbackText);
+  } catch (error) {
+    return `❌ 调用异常: ${error.message}`;
+  }
+}
+
 export const MODEL_CONFIGS = [
   {
     id: 'llama4',
@@ -40,10 +52,16 @@ export const MODEL_CONFIGS = [
       runCloudflareModel(env, '@cf/moonshotai/kimi-k2.5', prompt, '❌ 无法解析 Kimi 的返回结果'),
   },
   {
-    id: 'glm',
-    title: 'GLM 4.7 Flash',
+    id: 'gptoss',
+    title: 'GPT-OSS 120B',
     dotClass: 'bg-orange-500',
     run: (prompt, env) =>
-      runCloudflareModel(env, '@cf/zai-org/glm-4.7-flash', prompt, 'GLM 未返回内容'),
+      runCloudflareInputModel(
+        env,
+        '@cf/openai/gpt-oss-120b',
+        prompt,
+        'GPT-OSS 120B 未返回内容',
+        'You are a concise assistant.'
+      ),
   },
 ];
