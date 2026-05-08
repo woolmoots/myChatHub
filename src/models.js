@@ -7,12 +7,12 @@ const extractModelText = (result, fallbackText) => {
   );
 };
 
-async function runCloudflareModel(env, modelName, prompt, fallbackText) {
+async function runCloudflareModel(env, modelName, prompt, fallbackText, runOptions) {
   try {
     const result = await env.AI.run(modelName, {
       messages: [{ role: 'user', content: prompt }],
       stream: false,
-    });
+    }, runOptions);
     return extractModelText(result, fallbackText);
   } catch (error) {
     return `❌ 调用异常: ${error.message}`;
@@ -25,7 +25,9 @@ export const MODEL_CONFIGS = [
     title: 'GPT-5.5',
     dotClass: 'bg-purple-500',
     run: (prompt, env) =>
-      runCloudflareModel(env, 'openai/gpt-5.5', prompt, 'GPT-5.5 未返回内容'),
+      runCloudflareModel(env, 'openai/gpt-5.5', prompt, 'GPT-5.5 未返回内容', {
+        gateway: { id: 'default' },
+      }),
   },
   {
     id: 'kimi',
