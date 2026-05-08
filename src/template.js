@@ -1,4 +1,21 @@
-export function renderHTML() {
+const renderModelCards = (models) =>
+  models
+    .map(
+      (model) => `
+            <div class="card rounded-2xl p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center"><span class="w-3 h-3 ${model.dotClass} rounded-full mr-2"></span><h3 class="font-bold">${model.title}</h3></div>
+                    <span id="time-${model.id}" class="text-xs text-slate-500"></span>
+                </div>
+                <div id="res-${model.id}" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">等待输入...</div>
+            </div>
+      `
+    )
+    .join('');
+
+export function renderHTML(models) {
+  const modelIds = models.map((model) => model.id);
+
   return `
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -39,34 +56,14 @@ export function renderHTML() {
         </section>
 
         <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="card rounded-2xl p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center"><span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span><h3 class="font-bold">MiniMax M2.7</h3></div>
-                    <span id="time-minimax" class="text-xs text-slate-500"></span>
-                </div>
-                <div id="res-minimax" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">等待输入...</div>
-            </div>
-            <div class="card rounded-2xl p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center"><span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span><h3 class="font-bold">Kimi K2.5</h3></div>
-                    <span id="time-kimi" class="text-xs text-slate-500"></span>
-                </div>
-                <div id="res-kimi" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">等待输入...</div>
-            </div>
-            <div class="card rounded-2xl p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center"><span class="w-3 h-3 bg-orange-500 rounded-full mr-2"></span><h3 class="font-bold">GLM 4.7 Flash</h3></div>
-                    <span id="time-glm" class="text-xs text-slate-500"></span>
-                </div>
-                <div id="res-glm" class="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">等待输入...</div>
-            </div>
+            ${renderModelCards(models)}
         </section>
     </main>
 
     <script>
         const sendBtn = document.getElementById('sendBtn');
         const promptInput = document.getElementById('prompt');
-        const models = ['minimax', 'kimi', 'glm'];
+        const models = ${JSON.stringify(modelIds)};
 
         const resetUI = () => {
             models.forEach((model) => {
