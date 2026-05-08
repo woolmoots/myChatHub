@@ -7,12 +7,12 @@ const extractModelText = (result, fallbackText) => {
   );
 };
 
-async function runCloudflareModel(env, modelName, prompt, fallbackText, runOptions) {
+async function runCloudflareModel(env, modelName, prompt, fallbackText) {
   try {
     const result = await env.AI.run(modelName, {
       messages: [{ role: 'user', content: prompt }],
       stream: false,
-    }, runOptions);
+    });
     return extractModelText(result, fallbackText);
   } catch (error) {
     return `❌ 调用异常: ${error.message}`;
@@ -21,13 +21,16 @@ async function runCloudflareModel(env, modelName, prompt, fallbackText, runOptio
 
 export const MODEL_CONFIGS = [
   {
-    id: 'gpt55',
-    title: 'GPT-5.5',
+    id: 'llama4',
+    title: 'Llama 4 Scout',
     dotClass: 'bg-purple-500',
     run: (prompt, env) =>
-      runCloudflareModel(env, 'openai/gpt-5.5', prompt, 'GPT-5.5 未返回内容', {
-        gateway: { id: 'default' },
-      }),
+      runCloudflareModel(
+        env,
+        '@cf/meta/llama-4-scout-17b-16e-instruct',
+        prompt,
+        'Llama 4 Scout 未返回内容'
+      ),
   },
   {
     id: 'kimi',
